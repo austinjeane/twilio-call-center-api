@@ -7,6 +7,9 @@ var twiml = twilioHelper.twiml;
 
 var appUrl = process.env.APP_URL;
 
+var ContactOnHoldModel = require("../models/contactsOnHold.js");
+var UserModel = require("../models/user.js");
+
 // makes an outbound call to a customer's phone number. when the call is answered it will 
 // make a call to a call center agent's phone number to connect with the customer
 router.post('/call', async (req, res) => {
@@ -20,7 +23,7 @@ router.post('/call', async (req, res) => {
   const agentNumber = req.body.agentNumber;
 
   const voiceResponse = new twiml.VoiceResponse();
-  voiceResponse.say('Please wait while we connect you to the next availible agent');
+  voiceResponse.say('Please wait while we connect you to the next availible agent. This call may be recorded');
   voiceResponse.dial(agentNumber);
   voiceResponse.record({
       timeout: 10,
@@ -29,16 +32,47 @@ router.post('/call', async (req, res) => {
 
   console.log(voiceResponse.toString());
 
-  var call = await client.calls
-    .create({
-      statusCallback: `${appUrl}/callcenter/call-status-update`, //optional
+  var callRequest = {
+    statusCallback: `${appUrl}/callcenter/call-status-update`, //optional
       statusCallbackMethod: 'POST', //optional
-      twiml: voiceResponse.toString(),
+      twiml: voiceResponse.toString()
+  };
+  var call = null;
+
+  // check if contact is on hold 
+  var contactOnHold = await ContactOnHoldModel.findOne({
+    phone: to
+  });
+
+  if(contactOnHold) {
+    var deletedContactOnHold = await ContactOnHoldModel.findOneAndRemove({
+      phone: to
+    });
+
+    call = await  client.calls(contactOnHold.callSid).update(callRequest);
+  } else {
+    call = await client.call.create({
+      ...callRequest,
       to: `+${to}`,
       from: `+${from}`
     });
+  }
 
   console.log(call);
+
+  // update user is on call
+  var updatedUser = await UserModel.findOneAndUpdate(
+    {
+      phone: agentNumber
+    }, 
+    {
+      call_status: 'on call',
+      status: "online",
+      last_phone_called: to
+    },
+    {
+      new: true
+    });
 
   return res.json(call);
 });
@@ -65,6 +99,13 @@ router.post('/get-call-recording', async (req, res) => {
   // we can return mp3 link here if you like
   
   return res.json(recordings);
+});
+
+// getting users on hold
+router.post('/get-calls-on-hold', async (req, res) => {
+  var contactsOnHold = await ContactOnHoldModel.find();
+
+  return res.json(contactsOnHold);
 });
 
 module.exports = router

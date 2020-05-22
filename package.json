@@ -11,11 +11,13 @@
   "dependencies": {
     "express": "^4.17.1",
     "express-async-errors": "^3.1.1",
+    "mongoose": "^5.9.15",
     "twilio": "^3.43.1"
   },
   "devDependencies": {
     "axios": "^0.19.2",
     "mocha": "^7.1.2",
+    "mongodb-memory-server": "^6.6.1",
     "supertest": "^4.0.2"
   }
 }
