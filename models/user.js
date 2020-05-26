@@ -147,4 +147,4 @@ const schema = new Schema({
 
 })
 
-modeul.exports = mongoose.model('users', schema);
+module.exports = mongoose.model('users', schema);

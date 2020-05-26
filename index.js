@@ -3,9 +3,14 @@ require('express-async-errors');
 const app = express();
 const port = 3000;
 
+var mongoose = require('mongoose');
+
+mongoose.connect(process.env.MONGO_SERVER_URI, {useNewUrlParser: true});
+
 const userRoutes = require('./routes/callcenter.js');
 const webhookRoutes = require('./routes/webhook.js');
 
+app.use(express.urlencoded());
 app.use(express.json());
 
 app.use('/callcenter', userRoutes);

@@ -7,7 +7,12 @@ const schema = new Schema({
     },
     callSid: {
         type: String,
-    }
+    },
+    expireAt: {
+        type: Date,
+        default: Date.now,
+        index: { expires: '80m' },
+      }
 })
 
-module.exports = mongoose.model('contactsOnHold', schema);v
+module.exports = mongoose.model('onHoldCalls', schema);
