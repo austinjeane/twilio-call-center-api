@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+var moment = require('moment-timezone');
 
 var { client, twiml } = require('./../twilio-helper.js');
 
@@ -37,8 +38,6 @@ router.post('/call-status-update', async (req, res) => {
   const direction = req.body.Direction;
   const caller = req.body.Caller.replace("+", "");
 
-  //todo: find user.last_phone_called by callSid and update user status based on call status
-
   //they hung up
   if(callStatus === "completed") {
     var callOnHold = await OnHoldCallsModel.findOne({callSid});
@@ -66,6 +65,21 @@ router.post('/on-call', async (req, res) => {
   const response = new twiml.VoiceResponse();
   const callSid = req.body.CallSid;
   const from = req.body.From.replace("+", "");
+
+  var date = moment().tz("America/New_York");
+
+  // returns 1-7 where 1 is Monday and 7 is Sunday
+  var weekday = date.isoWeekday(); 
+
+  var startTime = moment('08:00 am', "HH:mm a"); 
+  var endTime = moment('05:00 pm', "HH:mm a"); 
+
+  // if it is saturday or sunday or not in business hours
+  if(weekday === 6 || weekday === 7 || date.isBetween(startTime, endTime) == false) {
+    response.say("Sorry, we are currently closed. Our business hours are Monday through Friday from 8 A.M. to 5 P.M.");
+    res.set('Content-Type', 'text/xml');
+    return res.send(response.toString());
+  }
 
   // todo: lookup contact by from number
   var contact = await ContactModel.findOne({phone: from}).populate("assigned_user").exec();
