@@ -150,6 +150,7 @@ router.post('/on-call', async (req, res) => {
 router.post('/on-ivr-action', async (req, res) => {
   console.log(req.body);
   const from = req.body.From;
+  const callSid = req.body.CallSid;
   const response = new twiml.VoiceResponse();
   
   if (req.body.Digits) {
@@ -191,9 +192,7 @@ router.post('/on-ivr-action', async (req, res) => {
       transcribe: true
     });
   } else {
-    // todo: put on hold?
-    // check if any users online, if so put on hold. otherwise played closed message.
-    response.say("We are currently closed. Please try to call back during business hours");
+    response = await putOnHoldResponse(from, callSid);
   }
 
   res.set('Content-Type', 'text/xml');
