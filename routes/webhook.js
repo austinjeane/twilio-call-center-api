@@ -71,8 +71,8 @@ router.post('/on-call', async (req, res) => {
   // returns 1-7 where 1 is Monday and 7 is Sunday
   var weekday = date.isoWeekday(); 
 
-  var startTime = moment('08:00 am', "HH:mm a"); 
-  var endTime = moment('05:00 pm', "HH:mm a"); 
+  var startTime = moment('08:00 am', "HH:mm a").tz("America/New_York"); 
+  var endTime = moment('05:00 pm', "HH:mm a").tz("America/New_York"); 
 
   // if it is saturday or sunday or not in business hours
   if(weekday === 6 || weekday === 7 || date.isBetween(startTime, endTime) == false) {
